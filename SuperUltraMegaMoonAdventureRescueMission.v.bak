@@ -1,0 +1,1383 @@
+module SuperUltraMegaMoonAdventureRescueMission (KEY, CLOCK_50, VGA_CLK, VGA_HS,	VGA_VS, VGA_BLANK_N,	VGA_SYNC_N,	VGA_R, VGA_G, VGA_B);
+
+	input [3:0] KEY;
+	input CLOCK_50;
+	output			VGA_CLK;   				//	VGA Clock
+	output			VGA_HS;					//	VGA H_SYNC
+	output			VGA_VS;					//	VGA V_SYNC
+	output			VGA_BLANK_N;				//	VGA BLANK
+	output			VGA_SYNC_N;				//	VGA SYNC
+	output	[9:0]	VGA_R;   				//	VGA Red[9:0]
+	output	[9:0]	VGA_G;	 				//	VGA Green[9:0]
+	output	[9:0]	VGA_B;   				//	VGA Blue[9:0]
+	
+	wire resetn;
+	wire start;
+	
+	assign start = ~KEY[1] | ~KEY[2] | ~KEY[3];
+	assign resetn = KEY[0];
+	
+	wire [2:0] colour;
+	wire [8:0] x;
+	wire [7:0] y;
+	wire writeEn;
+	
+	vga_adapter VGA(
+			.resetn(resetn),
+			.clock(CLOCK_50),
+			.colour(colour),
+			.x(x),
+			.y(y),
+			.plot(writeEn),
+			/* Signals for the DAC to drive the monitor. */
+			.VGA_R(VGA_R),
+			.VGA_G(VGA_G),
+			.VGA_B(VGA_B),
+			.VGA_HS(VGA_HS),
+			.VGA_VS(VGA_VS),
+			.VGA_BLANK(VGA_BLANK_N),
+			.VGA_SYNC(VGA_SYNC_N),
+			.VGA_CLK(VGA_CLK));
+		defparam VGA.RESOLUTION = "320x240";
+		defparam VGA.MONOCHROME = "FALSE";
+		defparam VGA.BITS_PER_COLOUR_CHANNEL = 1;
+		defparam VGA.BACKGROUND_IMAGE = "Title.mif";
+		
+	gameFlow GF(.clock(CLOCK_50),
+					.resetn(resetn),
+					.accelerateUp(~KEY[2]),
+					.accelerateRight(~KEY[3]),
+					.accelerateLeft(~KEY[1]),
+					.start(start),
+					.colour(colour),
+					.x(x),
+					.y(y),
+					.writeEn(writeEn)
+					);
+						
+endmodule
+
+module gameFlow (clock, resetn, accelerateUp, accelerateRight, accelerateLeft, start, colour, x, y, writeEn);
+	
+	input clock;
+	input resetn;
+	input accelerateUp, accelerateRight, accelerateLeft;
+	input start;
+	output [2:0] colour;
+	output [8:0] x;
+	output [7:0] y;
+	output writeEn;
+	
+	wire doneDrawing;
+	wire [25:0] speedXOut;
+	wire [25:0] speedYOut;
+	wire moveUp;
+	wire moveDown;
+	wire moveRight;
+	wire moveLeft;
+	wire [16:0] rocketLocation;
+	wire data;
+	wire [19:0] pointsScored;
+	wire crashed;
+	wire edgeValues;
+	wire readBackground;
+	wire [3:0] backgroundIndex;
+	wire drawScore;
+	wire [2:0] platform1Multiplier;
+	wire [2:0] platform2Multiplier;
+	wire [2:0] platform3Multiplier;
+	wire [2:0] platform4Multiplier;
+	wire [2:0] platform5Multiplier;
+	wire moveEnable; // Stick this in something
+	wire continue1;
+	wire crashedCounter;
+	
+	
+	speedX xDirection(.clock(clock), 
+							.acceleration1(accelerateLeft), 
+							.acceleration2(accelerateRight),
+							.moveEnable(moveEnable),
+							.speedXOut(speedXOut)
+							);
+					  
+					  
+	speedY yDirection(.clock(clock), 
+							.acceleration(accelerateUp),
+							.moveEnable(moveEnable),
+							.speedYOut(speedYOut)
+							);
+	
+	changePosition changeXPosition(.clock(clock),
+											 .speed(speedXOut),
+											 .crashed(crashed),
+											 .moveEnable(moveEnable),
+											 .movePositive(moveRight),
+											 .moveNegative(moveLeft)
+											 );
+											 
+	changePosition changeYPosition(.clock(clock),
+											 .speed(speedYOut),
+											 .crashed(crashed),
+											 .moveEnable(moveEnable),
+											 .movePositive(moveUp),
+											 .moveNegative(moveDown)
+											 );
+	
+	rocketPositionLogic rocketPosition(.clock(clock),
+												  .resetn(resetn),
+												  .crashed(crashed),
+												  .moveEnable(moveEnable),
+												  .moveUp(moveUp),
+												  .moveDown(moveDown),
+												  .moveLeft(moveLeft),
+												  .moveRight(moveRight),
+												  .currentAddress(rocketLocation)
+												  );
+												  
+	edgeValueFSM(.clock(clock),
+					 .resetn(resetn),
+					 .rocketLocation(rocketLocation),
+					 .edgeValue(edgeValues)
+					 );
+												  
+	rocketBehaviour rocket(.clock(clock),
+								  .rocketLocation(rocketLocation),
+								  .resetn(resetn),
+								  .speedXOut(speedXOut),
+								  .speedYOut(speedYOut),
+								  .platform1Multiplier(platform1Multiplier),
+								  .platform2Multiplier(platform2Multiplier),
+								  .platform3Multiplier(platform3Multiplier),
+								  .platform4Multiplier(platform4Multiplier),
+								  .platform5Multiplier(platform5Multiplier),
+								  .edgeValues(edgeValues),
+								  .pointsScored(pointsScored),
+								  .crashed(crashed)
+								  );
+										
+	drawRocket DR(.clock(clock),
+					  .resetn(resetn),
+					  .crashed(crashed),
+					  .rocketLocation(rocketLocation),
+					  .readBackground(readBackground),
+					  .backgroundIndex(backgroundIndex),
+					  .moveDown(moveDown),
+					  .moveUp(moveUp),
+					  .moveRight(moveRight),
+					  .moveLeft(moveLeft),
+					  .moveEnable(moveEnable),
+					  .load(writeEn),
+					  .colour(colour),
+					  .x(x),
+					  .y(y),
+					  .doneDrawing(doneDrawing)
+					  );
+					  
+	gameFlowControl GFC(.clock(clock),
+							  .resetn(resetn),
+							  .start(start),
+							  .continue1(continue1),
+							  .crashed(crashedCounter),
+							  .doneDrawing(doneDrawing),
+							  .readBackground(readBackground),
+							  .backgroundIndex(backgroundIndex),
+							  .drawScore(drawScore),
+							  .platform1Multiplier(platform1Multiplier),
+							  .platform2Multiplier(platform2Multiplier),
+							  .platform3Multiplier(platform3Multiplier),
+							  .platform4Multiplier(platform4Multiplier),
+							  .platform5Multiplier(platform5Multiplier),
+							  .moveEnable(moveEnable)
+							  );
+							  
+	counters count(.clock(clock),
+						.crashed(crashed),
+						.pointsScored(pointsScored),
+						.crashedCounter(crashedCounter),
+						.continue1(continue1)
+						);
+
+endmodule
+
+module speedX (clock, acceleration1, acceleration2, moveEnable, speedXOut);
+
+	input clock;
+	input acceleration1, acceleration2;
+	input moveEnable;
+	output reg [25:0] speedXOut;
+	
+	reg [25:0] accelerationCounter1;
+	reg [25:0] accelerationCounter2;
+	reg accelerateRight;
+	reg accelerateLeft;
+	
+	always @ (posedge clock)
+	begin
+		if (moveEnable)
+		begin
+			if (acceleration1 == 1'b1 && acceleration2 == 1'b1)
+			begin
+				accelerateRight = 1'b0;
+				accelerateLeft = 1'b0;
+			end
+			else if (acceleration1 == 1'b1)
+			begin
+				accelerateLeft = 1'b0;
+				if (accelerationCounter1 == 26'd50000000)
+				begin
+					accelerationCounter1 = 26'd0;
+					accelerateRight = 1'b1;
+				end
+				else
+				begin
+					accelerationCounter1 = accelerationCounter1 + 26'd1;
+					accelerateRight = 1'b0;
+				end
+			end
+			else if (acceleration2 == 1'b1)
+			begin
+				accelerateRight = 1'b0;
+				if (accelerationCounter2 == 26'd50000000)
+				begin
+					accelerationCounter2 = 26'd0;
+					accelerateLeft = 1'b1;
+				end
+				else
+				begin
+					accelerationCounter2 = accelerationCounter2 + 26'd1;
+					accelerateLeft = 1'b0;
+				end
+			end
+		end
+		else
+		begin
+			accelerateLeft = 1'b0;
+			accelerateRight = 1'b0;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		// accelerating to the right
+		if (accelerateRight == 1'b1)
+		begin
+			// speedY is lowest possible negative speed
+			if (speedXOut == 26'b11011111010111100001000000)
+			begin
+				// speedY becomes 0
+				speedXOut = 26'b0;
+			end
+			// speedY is not moving
+			else if (speedXOut == 26'b0)
+			begin
+				// speedY becomes lowest positive speed
+				speedXOut = 26'b01011111010111100001000000;
+			end
+			// speedY is highest possible speed
+			else if (speedXOut == 26'b00010011000100101101000000)
+			begin
+				// maintain speed to prevent overflow
+			end
+			// speedY is going in the negative direction
+			else if (speedXOut[25] == 1'b1)
+			begin
+				// speedY slows down in negative direction
+				speedXOut = speedXOut + 26'd5000000;
+			end
+			// speedY is going in the positive direction
+			else if (speedXOut[25] == 1'b0)
+			begin
+				// speedY speeds up in positive direction
+				speedXOut = speedXOut - 26'd5000000;
+			end
+		end
+		// accelerating downwards
+		if (accelerateLeft == 1'b1) 
+		begin
+			// speedY is the lowest positive speed
+			if (speedXOut == 26'b01011111010111100001000000)
+			begin
+				// makes it stop moving
+				speedXOut = 26'd0;
+			end
+			// speedY is 0
+			else if (speedXOut == 26'b0)
+			begin
+				// makes it start moving down
+				speedXOut = 26'b11011111010111100001000000;
+			end
+			// speedY is highest negative speed
+			else if (speedXOut == 26'b10010011000100101101000000)
+			begin
+				// maintain speed to prevent overflow
+			end
+			// speedY is negative
+			else if (speedXOut[25] == 1'b1)
+			begin
+				// speed up in the negative direction
+				speedXOut = speedXOut - 26'd5000000;
+			end
+			// speedY is positive
+			else if (speedXOut[25] == 1'b0)
+			begin
+				// slow down in the positive direction
+				speedXOut = speedXOut + 26'd5000000;
+			end
+		end
+	end
+	
+	
+endmodule
+
+module speedY (clock, acceleration, moveEnable, speedYOut);
+
+	input clock;
+	input acceleration;
+	input moveEnable;
+	output reg [25:0] speedYOut;
+	
+	reg [25:0] accelerationCounterUp;
+	reg [25:0] accelerationCounterDown;
+	reg accelerateUp;
+	reg accelerateDown;
+
+	always @ (posedge clock)
+	begin
+		if (moveEnable)
+			begin
+			if (acceleration == 1'b1)
+			begin
+				accelerateDown = 1'b0;
+				if (accelerationCounterUp == 26'd50000000)
+				begin
+					accelerationCounterUp = 26'd0;
+					accelerateUp = 1'b1;
+				end
+				else
+				begin
+					accelerationCounterUp = accelerationCounterUp + 26'd1;
+					accelerateUp = 1'b0;
+				end
+			end
+			else
+			begin
+				accelerateUp = 1'b0;
+				if (accelerationCounterDown == 26'd50000000)
+				begin
+					accelerationCounterDown = 26'd0;
+					accelerateDown = 1'b1;
+				end
+				else
+				begin
+					accelerationCounterDown = accelerationCounterDown + 26'd1;
+					accelerateDown = 1'b0;
+				end
+			end
+		end
+		else
+		begin
+			accelerateUp = 1'b0;
+			accelerateDown = 1'b0;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		// accelerating to the right
+		if (accelerateUp == 1'b1)
+		begin
+			// speedY is lowest possible negative speed
+			if (speedYOut == 26'b11011111010111100001000000)
+			begin
+				// speedY becomes 0
+				speedYOut = 26'b0;
+			end
+			// speedY is not moving
+			else if (speedYOut == 26'b0)
+			begin
+				// speedY becomes lowest positive speed
+				speedYOut = 26'b01011111010111100001000000;
+			end
+			// speedY is highest possible speed
+			else if (speedYOut == 26'b00010011000100101101000000)
+			begin
+				// maintain speed to prevent overflow
+			end
+			// speedY is going in the negative direction
+			else if (speedYOut[25] == 1'b1)
+			begin
+				// speedY slows down in negative direction
+				speedYOut = speedYOut + 26'd5000000;
+			end
+			// speedY is going in the positive direction
+			else if (speedYOut[25] == 1'b0)
+			begin
+				// speedY speeds up in positive direction
+				speedYOut = speedYOut - 26'd5000000;
+			end
+		end
+		// accelerating downwards
+		if (accelerateDown == 1'b1) 
+		begin
+			// speedY is the lowest positive speed
+			if (speedYOut == 26'b01011111010111100001000000)
+			begin
+				// makes it stop moving
+				speedYOut = 26'd0;
+			end
+			// speedY is 0
+			else if (speedYOut == 26'b0)
+			begin
+				// makes it start moving down
+				speedYOut = 26'b11011111010111100001000000;
+			end
+			// speedY is highest negative speed
+			else if (speedYOut == 26'b10010011000100101101000000)
+			begin
+				// maintain speed to prevent overflow
+			end
+			// speedY is negative
+			else if (speedYOut[25] == 1'b1)
+			begin
+				// speed up in the negative direction
+				speedYOut = speedYOut - 26'd5000000;
+			end
+			// speedY is positive
+			else if (speedYOut[25] == 1'b0)
+			begin
+				// slow down in the positive direction
+				speedYOut = speedYOut + 26'd5000000;
+			end
+		end
+	end
+endmodule
+
+module changePosition (clock, speed, crashed, moveEnable, movePositive, moveNegative);
+
+	input clock;
+	input [25:0] speed;
+	input crashed;
+	input moveEnable;
+	output reg movePositive;
+	output reg moveNegative;
+	
+	reg [24:0] speedCounter;
+	
+	always @ (posedge clock)
+	begin
+		if (crashed || !moveEnable)
+		begin
+			moveNegative = 1'b0;
+			movePositive = 1'b0;
+		end
+		else
+		begin
+			if (speed == 26'b0)
+			begin
+				moveNegative = 1'b0;
+				movePositive = 1'b0;
+			end
+			else if (speedCounter >= speed[24:0])	
+			begin
+				speedCounter = 25'b0;
+				if (speed[25] == 1)
+					moveNegative = 1'b1;
+				else
+					movePositive = 1'b1;
+			end
+			else
+			begin
+				movePositive <= 1'b0;
+				moveNegative <= 1'b0;
+				speedCounter = speedCounter + 25'd1;
+			end
+		end
+	end
+	
+endmodule
+
+module rocketPositionLogic (clock, resetn, crashed, moveEnable, moveUp, moveDown, moveLeft, moveRight, currentAddress);
+
+	input clock;
+	input crashed;
+	input moveUp;
+	input moveDown;
+	input moveLeft;
+	input moveRight;
+	input resetn;
+	input moveEnable;
+	output [16:0] currentAddress;
+	
+	reg [16:0] rocketLocation;
+	
+	assign currentAddress = rocketLocation;
+	
+	always @ (posedge clock)
+	begin
+		if (!resetn || !moveEnable)
+		begin
+			rocketLocation = 17'd5148;
+		end
+		else if (crashed)
+		begin
+		end
+		else
+		begin
+			if (moveUp)
+			begin
+				rocketLocation = rocketLocation - 17'd320;
+			end
+			else if (moveDown)
+			begin
+				rocketLocation = rocketLocation + 17'd320;
+			end
+			if (moveLeft)
+			begin
+				rocketLocation = rocketLocation - 17'd1;
+			end
+			else if (moveRight)
+			begin
+				rocketLocation = rocketLocation + 17'd1;
+			end
+		end
+	end
+
+endmodule
+
+module rocketBehaviour (clock, rocketLocation, resetn, speedXOut, speedYOut, edgeValues, platform1Multiplier, platform2Multiplier, platform3Multiplier, platform4Multiplier, platform5Multiplier, pointsScored, crashed);
+
+	input clock;
+	input [16:0] rocketLocation;
+	input resetn;
+	input [25:0] speedXOut;
+	input [25:0] speedYOut;
+	input edgeValues;
+	input [2:0] platform1Multiplier, platform2Multiplier, platform3Multiplier, platform4Multiplier, platform5Multiplier;
+	output reg [19:0] pointsScored;
+	output reg crashed;
+	
+	wire [24:0] absoluteValueX;
+	wire [24:0] absoluteValueY;
+	
+	assign absoluteValueX = speedXOut[24:0];
+	assign absoluteValueY = speedYOut[24:0];
+	
+	always @ (posedge clock)
+	begin
+		if (!resetn)
+		begin
+			pointsScored = 20'd0;
+			crashed = 1'b0;
+		end
+		if (pointsScored != 20'd0)
+		begin
+			pointsScored = 20'd0;
+			crashed = 1'b0;
+		end
+		if (rocketLocation == 17'd37472 || rocketLocation == 17'd37473)
+		begin
+			if (crashed)
+			begin
+				crashed = 1'b1;
+			end
+			else if ((absoluteValueX >= 25'd20000000 || absoluteValueX == 25'd0) && (absoluteValueY >= 25'd20000000 || absoluteValueX == 25'd0))
+			begin
+				pointsScored = (absoluteValueX + absoluteValueY) * platform1Multiplier;
+				crashed = 1'b0;
+			end
+			else
+			begin
+				pointsScored = 20'd0;
+				crashed = 1'b1;
+			end
+		end
+		else if (rocketLocation == 17'd41984 || rocketLocation == 17'd41985)
+		begin
+			if (crashed)
+			begin
+				crashed = 1'b1;
+			end
+			else if ((absoluteValueX >= 25'd20000000 || absoluteValueX == 25'd0) && (absoluteValueY >= 25'd20000000 || absoluteValueX == 25'd0))
+			begin
+				pointsScored = (absoluteValueX + absoluteValueY) * platform2Multiplier;
+				crashed = 1'b0;
+			end
+			else
+			begin
+				pointsScored = 20'd0;
+				crashed = 1'b1;
+			end
+		end
+		else if (rocketLocation == 17'd52957 || rocketLocation == 17'd52958)
+		begin
+			if (crashed)
+			begin
+				crashed = 1'b1;
+			end
+			else if ((absoluteValueX >= 25'd20000000 || absoluteValueX == 25'd0) && (absoluteValueY >= 25'd20000000 || absoluteValueX == 25'd0))
+			begin
+				pointsScored = (absoluteValueX + absoluteValueY) * platform3Multiplier;
+				crashed = 1'b0;
+			end
+			else
+			begin
+				pointsScored = 20'd0;
+				crashed = 1'b1;
+			end
+		end
+		else if (rocketLocation == 17'd45989 || rocketLocation == 17'd45990)
+		begin
+			if (crashed)
+			begin
+				crashed = 1'b1;
+			end
+			else if ((absoluteValueX >= 25'd20000000 || absoluteValueX == 25'd0) && (absoluteValueY >= 25'd20000000 || absoluteValueX == 25'd0))
+			begin
+				pointsScored = (absoluteValueX + absoluteValueY) * platform4Multiplier;
+				crashed = 1'b0;
+			end
+			else
+			begin
+				pointsScored = 20'd0;
+				crashed = 1'b1;
+			end
+		end
+		else if (rocketLocation == 17'd55598 || rocketLocation == 17'd55599)
+		begin
+			if (crashed)
+			begin
+				crashed = 1'b1;
+			end
+			else if ((absoluteValueX >= 25'd20000000 || absoluteValueX == 25'd0) && (absoluteValueY >= 25'd20000000 || absoluteValueX == 25'd0)) 
+			begin
+				pointsScored = (absoluteValueX + absoluteValueY) * platform5Multiplier;
+				crashed = 1'b0;
+			end
+			else
+			begin
+				pointsScored = 20'd0;
+				crashed = 1'b1;
+			end
+		end
+		else if (edgeValues == 1'b1)
+		begin
+			pointsScored = 20'd0;
+			crashed = 1'b1;
+		end
+		else
+		begin
+			pointsScored = 20'd0;
+			crashed = 1'b0;
+		end
+	end
+
+endmodule
+
+module edgeValueFSM (clock, resetn, rocketLocation, edgeValue);
+
+	input clock;
+	input resetn;
+	input [16:0] rocketLocation;
+	output edgeValue;
+	
+	reg [16:0] address;
+	wire ld_edgeValue;
+	wire ld_readAddress;
+	wire [5:0] relativePositionValue;
+	
+	always @ (posedge clock)
+	begin
+		if (ld_readAddress)
+		begin
+			address = rocketLocation + relativePositionValue;
+		end
+	end
+	
+	edgeValueControl EVC(clock, resetn, ld_edgeValue, ld_readAddress, relativePositionValue);
+	
+	edgeValueDatapath EVD(clock, ld_edgeValue, relativePositionValue, edgeValue, address);
+	
+endmodule
+
+module edgeValueDatapath (clock, ld_edgeValue, relativePositionValue, edgeValue, readAddress);
+	
+	input clock;
+	input ld_edgeValue;
+	input relativePositionValue;
+	input readAddress;
+	output reg edgeValue;
+	
+	wire inEdgeValue;
+	
+	always @ (posedge clock)
+	begin
+		if (ld_edgeValue)
+			edgeValue = inEdgeValue;
+	end
+	
+	TerrainMap terrain(.address(readAddress),
+							 .clock(clock),
+							 .q(inEdgeValue)
+							 );
+	
+endmodule
+
+module drawRocket(clock, resetn, crashed, rocketLocation, readBackground, backgroundIndex, moveDown, moveUp, moveRight, moveLeft, moveEnable, load, colour, x, y, doneDrawing);
+
+	input clock;
+	input resetn;
+	input crashed;
+	input [16:0] rocketLocation;
+	input readBackground;
+	input [3:0] backgroundIndex;
+	input moveDown, moveLeft, moveUp, moveRight;
+	input moveEnable;
+	output load;
+	output reg [2:0] colour;
+	output reg [8:0] x;
+	output reg [7:0] y;
+	output reg doneDrawing;
+	
+	reg [2:0] backgroundColour;
+	wire [2:0] title, level1Start, level1, level1Win, level2Start, level2, level2Win, level3Start, level3, gameWin, gameOver;
+	wire [4:0] relativeX;
+	wire [4:0] relativeY;
+	wire [7:0] RelativeY;
+	wire [8:0] RelativeX;
+	wire [8:0] rocketX;
+	wire [16:0] rocketY;
+	wire [5:0] rocketMapAddress;
+	wire [2:0] rocketColour;
+	wire [2:0] explosionColour;
+	wire readRocket;
+	reg [16:0] backgroundMapAddress;
+	reg [16:0] backgroundCounter;
+	reg [16:0] inputToVGA;
+	
+	assign rocketMapAddress = (4'd8 * relativeY[2:0]) + relativeX[2:0];
+	assign RelativeY[3:0] = relativeY[3:0];
+	assign RelativeY[7:4] = 4'b0;
+	assign RelativeX[3:0] = relativeX[3:0];
+	assign RelativeX[8:4] = 5'b0;
+	
+	always @ (posedge clock)
+	begin
+		doneDrawing <= 1'b0;
+		if (backgroundCounter == 17'd76799)
+		begin
+			backgroundCounter <= 17'd0;
+			doneDrawing <= 1'b1;
+		end
+		else if (readBackground || backgroundCounter != 17'd0)
+		begin
+			backgroundCounter <= backgroundCounter + 17'd1;
+		end
+		else
+		begin
+			backgroundCounter <= 17'd0;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		case (backgroundIndex)
+			4'b0000: // title
+			begin
+				backgroundColour <= title;
+			end
+			4'b0001: // level 1 start
+			begin
+				backgroundColour <= level1Start;
+			end
+			4'b0010: // level 1
+			begin
+				backgroundColour <= level1;
+			end
+			4'b0011: // level 1 score screen
+			begin
+				backgroundColour <= level1Win;
+			end
+			4'b0100: // level 2 start screen
+			begin
+				backgroundColour <= level2Start;
+			end
+			4'b0101: // level 2 screen
+			begin
+				backgroundColour <= level2;
+			end
+			4'b0110: // level 2 score screen
+			begin
+				backgroundColour <= level2Win;
+			end
+			4'b0111: // level 3 start screen
+			begin
+				backgroundColour <= level3Start;
+			end
+			4'b1000: // level 3 screen
+			begin
+				backgroundColour <= level3;
+			end
+			4'b1001: // win screen
+			begin
+				backgroundColour <= gameWin;
+			end
+			4'b1010: // game over screen
+			begin
+				backgroundColour <= gameOver;
+			end
+			default: 
+				backgroundColour <= title; // title
+		endcase
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (readBackground)
+		begin
+			colour <= backgroundColour;
+		end
+		else if (crashed)
+		begin
+			colour <= explosionColour;
+		end
+		else if (readRocket)
+		begin
+			colour <= rocketColour;
+		end
+		else
+		begin
+			colour <= backgroundColour;
+		end
+	end
+	
+	
+	always @ (posedge clock)
+	begin
+		if (readBackground || backgroundCounter != 17'd0)
+		begin
+			backgroundMapAddress <= backgroundCounter;
+		end
+		else if (moveEnable)
+		begin
+			if (relativeX[4] == 1'b1)
+			begin
+				if (relativeY[4] == 1'b1)
+				begin
+					backgroundMapAddress <= rocketLocation - (9'd320 * relativeY[3:0]) - relativeX[3:0];
+				end
+				else
+				begin
+					backgroundMapAddress <= rocketLocation + (9'd320 * relativeY[3:0]) - relativeX[3:0];
+				end
+			end
+			else
+			begin
+				if (relativeY[4] == 1'b1)
+				begin
+					backgroundMapAddress <= rocketLocation - (9'd320 * relativeY[3:0]) + relativeX[3:0];
+				end
+				else
+				begin
+					backgroundMapAddress <= rocketLocation + (9'd320 * relativeY[3:0]) + relativeX[3:0];
+				end
+			end
+		end
+		else
+		begin
+			backgroundMapAddress <= 17'd0;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (readBackground || backgroundCounter != 17'd0)
+		begin
+			inputToVGA <= backgroundMapAddress;
+		end
+		else
+		begin
+			inputToVGA <= rocketLocation;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (readBackground || backgroundCounter != 17'd0)
+		begin
+			x <= rocketX;
+			y <= rocketY[7:0];
+		end
+		else
+		begin
+			if (relativeX[4] == 1'b1)
+			begin
+				x <= rocketX - RelativeX;
+			end
+			else
+			begin
+				x <= rocketX + RelativeX;
+			end
+			if (relativeY[4] == 1'b1)
+			begin
+				y <= rocketY[7:0] - RelativeY;
+			end
+			else
+			begin
+				y <= rocketY[7:0] + RelativeY;
+			end
+		end
+	end
+	
+	drawRocketControl DRC(.clock(clock),
+								 .resetn(resetn),
+								 .load(load),
+								 .moveUp(moveUp),
+								 .moveLeft(moveLeft),
+								 .moveRight(moveRight),
+								 .moveDown(moveDown),
+								 .readBackground(readBackground),
+								 .doneDrawing(doneDrawing),
+								 .readRocket(readRocket),
+								 .relativeX(relativeX),
+								 .relativeY(relativeY)
+								 );
+	
+	division rocketXandY(.denom(9'd320),
+								.numer(inputToVGA),
+								.quotient(rocketY),
+								.remain(rocketX)
+								);
+								
+	ISpitFire explosion(.address(rocketMapAddress),
+							  .clock(clock),
+							  .q(explosionColour)
+							  );
+								
+	rocket rocketColours(.address(rocketMapAddress),
+								.clock(clock),
+								.q(rocketColour)
+								);
+								
+	backgroundMap BGcolours(.address(backgroundMapAddress),
+									.clock(clock),
+									.q(level2)
+									);
+									
+	title ttl(.address(backgroundMapAddress),
+				 .clock(clock),
+				.q(title)
+				);
+				
+	level1start l1start(.address(backgroundMapAddress),
+									  .clock(clock),
+									  .q(level1Start)
+									  );
+									  
+	levelTwoStart l2Start(.address(backgroundMapAddress),
+									  .clock(clock),
+									  .q(level2Start)
+									  );
+	
+	levelThreeStart l3Start(.address(backgroundMapAddress),
+										 .clock(clock),
+										 .q(level3Start)
+										 );
+										 
+	worldOneClear world1Clear(.address(backgroundMapAddress),
+									  .clock(clock),
+									  .q(level1Win)
+									  );
+									  
+	worldTwoClear world2Clear(.address(backgroundMapAddress),
+									  .clock(clock),
+									  .q(level2Win)
+									  );
+									  
+	gameClear winScreen(.address(backgroundMapAddress),
+							  .clock(clock),
+							  .q(gameWin)
+							  );
+							  
+	gameLose loseScreen(.address(backgroundMapAddress),
+							  .clock(clock),
+							  .q(gameOver)
+							  );
+									  
+	levelOne l1(.address(backgroundMapAddress),
+						 .clock(clock),
+						 .q(level1)
+						 );
+	
+	levelThree l3(.address(backgroundMapAddress),
+						 .clock(clock),
+						 .q(level3)
+						 );
+									  
+	
+endmodule
+
+module gameFlowControl(clock, resetn, start, continue1, crashed, doneDrawing, readBackground, backgroundIndex, drawScore, platform1Multiplier, platform2Multiplier, platform3Multiplier, platform4Multiplier, platform5Multiplier, moveEnable);
+
+
+	input clock;
+	input resetn;
+	input start;
+	input continue1;
+	input crashed;
+	input doneDrawing;
+	output reg readBackground;
+	output reg [3:0] backgroundIndex;
+	output reg drawScore;
+	output reg [2:0] platform1Multiplier;
+	output reg [2:0] platform2Multiplier;
+	output reg [2:0] platform3Multiplier;
+	output reg [2:0] platform4Multiplier;
+	output reg [2:0] platform5Multiplier;
+	output reg moveEnable;
+
+
+	reg [4:0] currentState, nextState;
+
+
+	localparam TITLE_SCREEN = 5'd0,
+				  START_LEVEL_ONE = 5'd1,
+				  LEVEL_ONE = 5'd2,
+				  WIN_LEVEL_ONE = 5'd3,
+				  START_LEVEL_TWO = 5'd4,
+				  LEVEL_TWO = 5'd5,
+				  WIN_LEVEL_TWO = 5'd6,
+				  START_LEVEL_THREE = 5'd7,
+				  LEVEL_THREE = 5'd8,
+				  WIN_GAME = 5'd9,
+				  GAME_OVER = 5'd10,
+				  DRAW_TITLE_SCREEN = 5'd11,
+				  DRAW_START_LEVEL_ONE_SCREEN = 5'd12,			 		        
+				  DRAW_LEVEL_ONE_SCREEN = 5'd13,
+				  DRAW_WIN_LEVEL_ONE_SCREEN = 5'd14,
+				  DRAW_START_LEVEL_TWO_SCREEN = 5'd15,
+				  DRAW_LEVEL_TWO_SCREEN = 5'd16,
+				  DRAW_WIN_LEVEL_TWO_SCREEN = 5'd17,
+				  DRAW_START_LEVEL_THREE_SCREEN = 5'd18,
+				  DRAW_LEVEL_THREE_SCREEN = 5'd19,
+				  DRAW_WIN_GAME_SCREEN = 5'd20,
+				  DRAW_GAME_OVER_SCREEN = 5'd21,
+				  WAIT_TITLE_SCREEN = 5'd22,
+				  WAIT_START_LEVEL_ONE_SCREEN = 5'd23,			 		        
+				  WAIT_LEVEL_ONE_SCREEN = 5'd24,
+				  WAIT_WIN_LEVEL_ONE_SCREEN = 5'd25,
+				  WAIT_START_LEVEL_TWO_SCREEN = 5'd26,
+				  WAIT_LEVEL_TWO_SCREEN = 5'd27,
+				  WAIT_WIN_LEVEL_TWO_SCREEN = 5'd28,
+				  WAIT_START_LEVEL_THREE_SCREEN = 5'd29,
+				  WAIT_LEVEL_THREE_SCREEN = 5'd30,
+				  WAIT_WIN_GAME_SCREEN = 5'd31,
+				  WAIT_GAME_OVER_SCREEN = 5'd2;
+	
+
+
+	always @ (posedge clock)
+	begin
+		case (currentState)
+			TITLE_SCREEN:
+			begin
+				nextState = start ? DRAW_START_LEVEL_ONE_SCREEN : TITLE_SCREEN;
+			end
+			DRAW_START_LEVEL_ONE_SCREEN:
+			begin
+				nextState = doneDrawing ? START_LEVEL_ONE : DRAW_START_LEVEL_ONE_SCREEN;
+			end
+			START_LEVEL_ONE:
+			begin
+				nextState = start ? DRAW_LEVEL_ONE_SCREEN : START_LEVEL_ONE;
+			end
+			LEVEL_ONE:
+			begin
+				if (crashed)
+					nextState = DRAW_GAME_OVER_SCREEN;
+				else if (continue1)
+					nextState = DRAW_WIN_LEVEL_ONE_SCREEN;
+				else
+					nextState = LEVEL_ONE;
+			end
+			DRAW_WIN_LEVEL_ONE_SCREEN:
+			begin
+				nextState = doneDrawing ? WIN_LEVEL_ONE : DRAW_WIN_LEVEL_ONE_SCREEN;
+			end
+			WIN_LEVEL_ONE:
+			begin
+				nextState = start ? DRAW_START_LEVEL_TWO_SCREEN : WIN_LEVEL_ONE;
+			end
+			DRAW_START_LEVEL_TWO_SCREEN:
+			begin
+				nextState = doneDrawing ? START_LEVEL_TWO : DRAW_START_LEVEL_TWO_SCREEN;
+			end
+			START_LEVEL_TWO:
+			begin
+				nextState = start ? DRAW_LEVEL_TWO_SCREEN : START_LEVEL_TWO;
+			end
+			DRAW_LEVEL_TWO_SCREEN:
+			begin
+				nextState = doneDrawing ? LEVEL_TWO : DRAW_LEVEL_TWO_SCREEN;
+			end
+			LEVEL_TWO:
+			begin
+				if (crashed)
+					nextState = DRAW_GAME_OVER_SCREEN;
+				else if (continue1)
+					nextState = DRAW_WIN_LEVEL_TWO_SCREEN;
+				else
+					nextState = LEVEL_TWO;
+			end
+			DRAW_WIN_LEVEL_TWO_SCREEN:
+			begin
+				nextState = doneDrawing ? WIN_LEVEL_TWO : DRAW_WIN_LEVEL_TWO_SCREEN;
+			end
+			WIN_LEVEL_TWO:
+			begin
+				nextState = start ? DRAW_START_LEVEL_THREE_SCREEN : WIN_LEVEL_TWO;
+			end
+			DRAW_START_LEVEL_THREE_SCREEN:
+			begin
+				nextState = doneDrawing ? START_LEVEL_THREE : DRAW_START_LEVEL_THREE_SCREEN;
+			end
+			START_LEVEL_THREE:
+			begin
+				nextState = start ? DRAW_LEVEL_THREE_SCREEN : START_LEVEL_THREE;
+			end
+			DRAW_LEVEL_THREE_SCREEN:
+			begin
+				nextState = doneDrawing ? LEVEL_THREE : DRAW_LEVEL_THREE_SCREEN;
+			end
+			LEVEL_THREE:
+			begin
+				if (crashed)
+					nextState = DRAW_GAME_OVER_SCREEN;
+				else if (continue1)
+					nextState = DRAW_WIN_GAME_SCREEN;
+				else
+					nextState = LEVEL_THREE;
+			end
+			DRAW_WIN_GAME_SCREEN:
+			begin
+				nextState = doneDrawing ? WIN_GAME : DRAW_WIN_GAME_SCREEN;
+			end
+			DRAW_GAME_OVER_SCREEN:
+			begin
+				nextState = doneDrawing ? GAME_OVER : DRAW_GAME_OVER_SCREEN;
+			end
+			WIN_GAME:
+			begin
+				nextState = resetn ? DRAW_TITLE_SCREEN : WIN_GAME;
+			end
+			GAME_OVER:
+			begin
+				nextState = resetn ? DRAW_TITLE_SCREEN : GAME_OVER;
+			end
+			DRAW_TITLE_SCREEN:
+			begin
+				nextState = doneDrawing ? TITLE_SCREEN : DRAW_TITLE_SCREEN;
+			end
+			default:
+			begin
+				nextState = DRAW_TITLE_SCREEN;
+			end
+		endcase
+	end
+
+
+	always @ (posedge clock)
+	begin
+		readBackground <= 1'b0;
+		backgroundIndex <= 4'b0;
+		// 0000 - title screen
+		// 0001 - level 1 start screen
+		// 0010 - level 1 screen
+		// 0011 - level 1 score screen
+		// 0100 - level 2 start screen
+		// 0101 - level 2 screen
+		// 0110 - level 2 score screen
+		// 0111 - level 3 start screen
+		// 1000 - level 3 screen
+		// 1001 - Win screen
+		// 1010 - game over screen
+		drawScore <= 1'b0;
+		platform1Multiplier <= 3'b0;
+		platform2Multiplier <= 3'b0;
+		platform3Multiplier <= 3'b0;
+		platform4Multiplier <= 3'b0;
+		platform5Multiplier <= 3'b0;
+		moveEnable <= 1'b0;
+
+
+		case (currentState) 
+			DRAW_START_LEVEL_ONE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0001;
+			end
+			DRAW_LEVEL_ONE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0010;
+			end
+			LEVEL_ONE: 
+			begin
+				moveEnable <= 1'b1;
+				platform1Multiplier <= 3'd1;
+				platform2Multiplier <= 3'd2;
+				platform3Multiplier <= 3'd5;
+				platform4Multiplier <= 3'd3;
+				platform5Multiplier <= 3'd4;
+			end
+			DRAW_WIN_LEVEL_ONE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0011;
+			end
+			WIN_LEVEL_ONE:
+			begin
+				drawScore <= 1'b1;
+			end
+			DRAW_START_LEVEL_TWO_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0100;
+			end
+			DRAW_LEVEL_TWO_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0101;
+			end
+			LEVEL_TWO: 
+			begin
+				moveEnable <= 1'b1;
+				platform1Multiplier <= 3'd1;
+				platform2Multiplier <= 3'd2;
+				platform3Multiplier <= 3'd3;
+				platform4Multiplier <= 3'd2;
+				platform5Multiplier <= 3'd5;
+			end
+			DRAW_WIN_LEVEL_TWO_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0110;
+			end
+			WIN_LEVEL_TWO:
+			begin
+				drawScore <= 1'b1;
+			end
+			DRAW_START_LEVEL_THREE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0111;
+			end
+			DRAW_LEVEL_THREE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b1000;
+			end
+			LEVEL_THREE: 
+			begin
+				moveEnable <= 1'b1;
+				platform1Multiplier <= 3'd2;
+				platform2Multiplier <= 3'd3;
+				platform3Multiplier <= 3'd5;
+				platform4Multiplier <= 3'd1;
+				platform5Multiplier <= 3'd2;
+			end
+			DRAW_WIN_GAME_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b1001;
+			end
+			WIN_GAME:
+			begin
+				drawScore <= 1'b1;
+			end
+			DRAW_GAME_OVER_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b1010;
+			end
+			GAME_OVER:
+			begin
+				drawScore <= 1'b1;
+			end
+			DRAW_TITLE_SCREEN:
+			begin
+				readBackground <= 1'b1;
+				backgroundIndex <= 4'b0000;
+			end
+		endcase
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (!resetn)
+			currentState = DRAW_TITLE_SCREEN;
+		else
+			currentState = nextState;
+	end
+	
+endmodule
+
+module counters (clock, crashed, pointsScored, crashedCounter, continue1);
+
+	input clock;
+	input crashed;
+	input pointsScored;
+	output reg crashedCounter;
+	output reg continue1;
+	
+	reg [27:0] count1;
+	reg [27:0] count2;
+	
+	always @ (posedge clock)
+	begin
+		if (crashed)
+		begin
+			count1 = 28'd1;
+			crashedCounter = 1'b0;
+		end
+		else if (count1 == 28'd150000000)
+		begin
+			count1 = 28'd0;
+			crashedCounter = 1'b1;
+		end
+		else if (count1 != 28'd0)
+		begin
+			count1 = count1 + 28'd1;
+			crashedCounter = 1'b0;
+		end
+		else
+		begin
+			count1 = 28'd0;
+			crashedCounter = 1'b0;
+		end
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (pointsScored)
+		begin
+			count2 = 28'd1;
+			continue1 = 1'b0;
+		end
+		else if (count2 == 28'd150000000)
+		begin
+			count2 = 28'd0;
+			continue1 = 1'b1;
+		end
+		else if (count2 != 28'd0)
+		begin
+			count2 = count2 + 28'd1;
+			continue1 = 1'b0;
+		end
+		else
+		begin
+			count2 = 28'd0;
+			continue1 = 1'b0;
+		end
+	end
+	
+endmodule

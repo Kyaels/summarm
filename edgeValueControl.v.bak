@@ -1,0 +1,600 @@
+module edgeValueControl (clock, resetn, ld_edgeValue, ld_readAddress, relativePositionValue);
+
+	input clock;
+	input resetn;
+	output reg [5:0] relativePositionValue;
+	output reg ld_edgeValue;
+	output reg ld_readAddress;
+	
+	wire [5:0] currentState, nextState;
+	
+	localparam READ_ADDRESS_1 = 5'd1,
+				  EDGE_VALUE_1 = 5'd2,
+				  READ_ADDRESS_2 = 5'd3,
+				  EDGE_VALUE_2 = 5'd4,
+				  READ_ADDRESS_3 = 5'd5,
+				  EDGE_VALUE_3 = 5'd6,
+				  READ_ADDRESS_4 = 5'd7,
+				  EDGE_VALUE_4 = 5'd8,
+				  READ_ADDRESS_5 = 5'd9,
+				  EDGE_VALUE_5 = 5'd10,
+				  READ_ADDRESS_6 = 5'd11,
+				  EDGE_VALUE_6 = 5'd12,
+				  READ_ADDRESS_7 = 5'd13,
+				  EDGE_VALUE_7 = 5'd14,
+				  READ_ADDRESS_8 = 5'd15,
+				  EDGE_VALUE_8 = 5'd16,
+				  READ_ADDRESS_9 = 5'd17,
+				  EDGE_VALUE_9 = 5'd18,
+				  READ_ADDRESS_10 = 5'd19,
+				  EDGE_VALUE_10 = 5'd20,
+				  READ_ADDRESS_11 = 5'd21,
+				  EDGE_VALUE_11 = 5'd22,
+				  READ_ADDRESS_12 = 5'd23,
+				  EDGE_VALUE_12 = 5'd24,
+				  READ_ADDRESS_13 = 5'd25,
+				  EDGE_VALUE_13 = 5'd26,
+				  READ_ADDRESS_14 = 5'd27,
+				  EDGE_VALUE_14 = 5'd28,
+				  READ_ADDRESS_15 = 5'd29,
+				  EDGE_VALUE_15 = 5'd30,
+				  READ_ADDRESS_16 = 5'd31,
+				  EDGE_VALUE_16 = 5'd32,
+				  READ_ADDRESS_17 = 5'd33,
+				  EDGE_VALUE_17 = 5'd34,
+				  READ_ADDRESS_18 = 5'd35,
+				  EDGE_VALUE_18 = 5'd36,
+				  READ_ADDRESS_19 = 5'd37,
+				  EDGE_VALUE_19 = 5'd38,
+				  READ_ADDRESS_20 = 5'd39,
+				  EDGE_VALUE_20 = 5'd40,
+				  READ_ADDRESS_21 = 5'd41,
+				  EDGE_VALUE_21 = 5'd42,
+				  READ_ADDRESS_22 = 5'd43,
+				  EDGE_VALUE_22 = 5'd44,
+				  READ_ADDRESS_23 = 5'd45,
+				  EDGE_VALUE_23 = 5'd46,
+				  READ_ADDRESS_24 = 5'd47,
+				  EDGE_VALUE_24 = 5'd48,
+				  READ_ADDRESS_25 = 5'd49,
+				  EDGE_VALUE_25 = 5'd50,
+				  READ_ADDRESS_26 = 5'd51,
+				  EDGE_VALUE_26 = 5'd52,
+				  READ_ADDRESS_27 = 5'd53,
+				  EDGE_VALUE_27 = 5'd54,
+				  READ_ADDRESS_28 = 5'd55,
+				  EDGE_VALUE_28 = 5'd56;
+	
+	always @ (posedge clock)
+	begin
+		case (currentState)
+			READ_ADDRESS_1:
+			begin
+				nextState = EDGE_VALUE_1;
+			end
+			EDGE_VALUE_1:
+			begin
+				nextState = READ_ADDRESS_2;
+			end
+			READ_ADDRESS_2:
+			begin
+				nextState = EDGE_VALUE_2;
+			end
+			EDGE_VALUE_2:
+			begin
+				nextState = READ_ADDRESS_3;
+			end
+			READ_ADDRESS_3:
+			begin
+				nextState = EDGE_VALUE_3;
+			end
+			EDGE_VALUE_3:
+			begin
+				nextState = READ_ADDRESS_4;
+			end
+			READ_ADDRESS_4:
+			begin
+				nextState = EDGE_VALUE_4;
+			end
+			EDGE_VALUE_4:
+			begin
+				nextState = READ_ADDRESS_5;
+			end
+			READ_ADDRESS_5:
+			begin
+				nextState = EDGE_VALUE_5;
+			end
+			EDGE_VALUE_5:
+			begin
+				nextState = READ_ADDRESS_6;
+			end
+			READ_ADDRESS_6:
+			begin
+				nextState = EDGE_VALUE_6;
+			end
+			EDGE_VALUE_6:
+			begin
+				nextState = READ_ADDRESS_7;
+			end
+			READ_ADDRESS_7:
+			begin
+				nextState = EDGE_VALUE_7;
+			end
+			EDGE_VALUE_7:
+			begin
+				nextState = READ_ADDRESS_8;
+			end
+			READ_ADDRESS_8:
+			begin
+				nextState = EDGE_VALUE_8;
+			end
+			EDGE_VALUE_8:
+			begin
+				nextState = READ_ADDRESS_9;
+			end
+			READ_ADDRESS_9:
+			begin
+				nextState = EDGE_VALUE_9;
+			end
+			EDGE_VALUE_9:
+			begin
+				nextState = READ_ADDRESS_10;
+			end
+			READ_ADDRESS_10:
+			begin
+				nextState = EDGE_VALUE_10;
+			end
+			EDGE_VALUE_10:
+			begin
+				nextState = READ_ADDRESS_11;
+			end
+			READ_ADDRESS_11:
+			begin
+				nextState = EDGE_VALUE_11;
+			end
+			EDGE_VALUE_11:
+			begin
+				nextState = READ_ADDRESS_12;
+			end
+			READ_ADDRESS_12:
+			begin
+				nextState = EDGE_VALUE_12;
+			end
+			EDGE_VALUE_12:
+			begin
+				nextState = READ_ADDRESS_13;
+			end
+			READ_ADDRESS_13:
+			begin
+				nextState = EDGE_VALUE_13;
+			end
+			EDGE_VALUE_13:
+			begin
+				nextState = READ_ADDRESS_14;
+			end
+			READ_ADDRESS_14:
+			begin
+				nextState = EDGE_VALUE_14;
+			end
+			EDGE_VALUE_14:
+			begin
+				nextState = READ_ADDRESS_15;
+			end
+			READ_ADDRESS_15:
+			begin
+				nextState = EDGE_VALUE_15;
+			end
+			EDGE_VALUE_15:
+			begin
+				nextState = READ_ADDRESS_16;
+			end
+			READ_ADDRESS_16:
+			begin
+				nextState = EDGE_VALUE_16;
+			end
+			EDGE_VALUE_16:
+			begin
+				nextState = READ_ADDRESS_17;
+			end
+			READ_ADDRESS_17:
+			begin
+				nextState = EDGE_VALUE_17;
+			end
+			EDGE_VALUE_17:
+			begin
+				nextState = READ_ADDRESS_18;
+			end
+			READ_ADDRESS_18:
+			begin
+				nextState = EDGE_VALUE_18;
+			end
+			EDGE_VALUE_18:
+			begin
+				nextState = READ_ADDRESS_19;
+			end
+			READ_ADDRESS_19:
+			begin
+				nextState = EDGE_VALUE_19;
+			end
+			EDGE_VALUE_19:
+			begin
+				nextState = READ_ADDRESS_20;
+			end
+			READ_ADDRESS_20:
+			begin
+				nextState = EDGE_VALUE_20;
+			end
+			EDGE_VALUE_20:
+			begin
+				nextState = READ_ADDRESS_21;
+			end
+			READ_ADDRESS_21:
+			begin
+				nextState = EDGE_VALUE_21;
+			end
+			EDGE_VALUE_21:
+			begin
+				nextState = READ_ADDRESS_22;
+			end
+			READ_ADDRESS_22:
+			begin
+				nextState = EDGE_VALUE_22;
+			end
+			EDGE_VALUE_22:
+			begin
+				nextState = READ_ADDRESS_23;
+			end
+			READ_ADDRESS_23:
+			begin
+				nextState = EDGE_VALUE_23;
+			end
+			EDGE_VALUE_23:
+			begin
+				nextState = READ_ADDRESS_24;
+			end
+			READ_ADDRESS_24:
+			begin
+				nextState = EDGE_VALUE_24;
+			end
+			EDGE_VALUE_24:
+			begin
+				nextState = READ_ADDRESS_25;
+			end
+			READ_ADDRESS_25:
+			begin
+				nextState = EDGE_VALUE_25;
+			end
+			EDGE_VALUE_25:
+			begin
+				nextState = READ_ADDRESS_26;
+			end
+			READ_ADDRESS_26:
+			begin
+				nextState = EDGE_VALUE_26;
+			end
+			EDGE_VALUE_26:
+			begin
+				nextState = READ_ADDRESS_27;
+			end
+			READ_ADDRESS_27:
+			begin
+				nextState = EDGE_VALUE_27;
+			end
+			EDGE_VALUE_27:
+			begin
+				nextState = READ_ADDRESS_28;
+			end
+			READ_ADDRESS_28:
+			begin
+				nextState = EDGE_VALUE_28;
+			end
+			EDGE_VALUE_28:
+			begin
+				nextState = READ_ADDRESS_1;
+			end
+			default:
+			begin
+				nextState = READ_ADDRESS_1;
+			end
+		endcase
+	end
+	
+	always @ (posedge clock)
+	begin
+		ld_edgeValue <= 1'b0;
+		ld_readAddress <= 1'b0;
+		relativePositionValue <= 5'd0;
+		case (currentState)
+			READ_ADDRESS_1:
+			begin
+				ld_readAddress <= 1'b1;
+			end
+			EDGE_VALUE_1:
+			begin
+				ld_edgeValue <= 1'b1;
+			end
+			READ_ADDRESS_2:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd1;
+			end
+			EDGE_VALUE_2:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd1;
+			end
+			READ_ADDRESS_3:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd2;
+			end
+			EDGE_VALUE_3:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd2;
+			end
+			READ_ADDRESS_4:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd3;
+			end
+			EDGE_VALUE_4:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd3;
+			end
+			READ_ADDRESS_5:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd4;
+			end
+			EDGE_VALUE_5:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd4;
+			end
+			READ_ADDRESS_6:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd5;
+			end
+			EDGE_VALUE_6:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd5;
+			end
+			READ_ADDRESS_7:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd6;
+			end
+			EDGE_VALUE_7:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd6;
+			end
+			READ_ADDRESS_8:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd7;
+			end
+			EDGE_VALUE_8:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd7;
+			end
+			READ_ADDRESS_9:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd8;
+			end
+			EDGE_VALUE_9:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd8;
+			end
+			READ_ADDRESS_10:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd15;
+			end
+			EDGE_VALUE_10:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd15;
+			end
+			READ_ADDRESS_11:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd16;
+			end
+			EDGE_VALUE_11:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd16;
+			end
+			READ_ADDRESS_12:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd23;
+			end
+			EDGE_VALUE_12:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd23;
+			end
+			READ_ADDRESS_13:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd24;
+			end
+			EDGE_VALUE_13:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd24;
+			end
+			READ_ADDRESS_14:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd31;
+			end
+			EDGE_VALUE_14:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd31;
+			end
+			READ_ADDRESS_15:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd32;
+			end
+			EDGE_VALUE_15:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd32;
+			end
+			READ_ADDRESS_16:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd39;
+			end
+			EDGE_VALUE_16:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd39;
+			end
+			READ_ADDRESS_17:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd40;
+			end
+			EDGE_VALUE_17:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd40;
+			end
+			READ_ADDRESS_18:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd47;
+			end
+			EDGE_VALUE_18:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd47;
+			end
+			READ_ADDRESS_19:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd48;
+			end
+			EDGE_VALUE_19:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd48;
+			end
+			READ_ADDRESS_20:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd55;
+			end
+			EDGE_VALUE_20:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd55;
+			end
+			READ_ADDRESS_21:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd56;
+			end
+			EDGE_VALUE_21:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd56;
+			end
+			READ_ADDRESS_22:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd57;
+			end
+			EDGE_VALUE_22:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd57;
+			end
+			READ_ADDRESS_23:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd58;
+			end
+			EDGE_VALUE_23:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd58;
+			end
+			READ_ADDRESS_24:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd59;
+			end
+			EDGE_VALUE_24:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd59;
+			end
+			READ_ADDRESS_25:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd60;
+			end
+			EDGE_VALUE_25:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd60;
+			end
+			READ_ADDRESS_26:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd61;
+			end
+			EDGE_VALUE_26:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd61;
+			end
+			READ_ADDRESS_27:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd62;
+			end
+			EDGE_VALUE_27:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd62;
+			end
+			READ_ADDRESS_28:
+			begin
+				ld_read_Address <= 1'b1;
+				relativePositionValue <= 5'd63;
+			end
+			EDGE_VALUE_28:
+			begin
+				ld_edgeValue <= 1'b1;
+				relativePositionValue <= 5'd63;
+			end
+		endcase
+	end
+	
+	always @ (posedge clock)
+	begin
+		if (resetn)
+		begin
+			currentState <= READ_ADDRESS_1;
+		end
+		else
+		begin	
+			currentState <= nextState;
+		end
+	end
+endmodule

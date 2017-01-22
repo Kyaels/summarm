@@ -1,0 +1,45 @@
+{
+	"partitions" : [
+		{
+			"name" : "Top",
+			"pins" : [
+				{
+					"name" : "address",
+					"strict" : false
+				},
+				{
+					"name" : "outQ[0]",
+					"strict" : false
+				},
+				{
+					"name" : "outQ[1]",
+					"strict" : false
+				},
+				{
+					"name" : "clock",
+					"strict" : false
+				},
+				{
+					"name" : "resetn",
+					"strict" : false
+				},
+				{
+					"name" : "moveLeft",
+					"strict" : false
+				},
+				{
+					"name" : "moveRight",
+					"strict" : false
+				},
+				{
+					"name" : "moveUp",
+					"strict" : false
+				},
+				{
+					"name" : "moveDown",
+					"strict" : false
+				}
+			]
+		}
+	]
+}

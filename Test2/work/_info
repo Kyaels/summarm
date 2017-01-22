@@ -1,0 +1,108 @@
+m255
+K4
+z2
+13
+!s112 1.1
+!i10d 8192
+!i10e 25
+!i10f 100
+cModel Technology
+Z0 dW:/ECE241/FinalProject/Test2
+vBinaryMap
+!s110 1479685907
+!i10b 1
+!s100 YeGZ^UQW>DOmeeH0dWzhT2
+IIzS2Slgh3<QakHig_cQIm0
+Z1 VDg1SIo80bB@j0V0VzS_@n1
+R0
+w1479411612
+8Binarymap.v
+FBinarymap.v
+Z2 L0 40
+Z3 OV;L;10.4d;61
+r1
+!s85 0
+31
+!s108 1479685907.000000
+!s107 Binarymap.v|
+!s90 -reportprogress|300|Binarymap.v|
+!i113 1
+n@binary@map
+vcontrol
+Z4 !s110 1479769067
+!i10b 1
+!s100 fbS4M=67XG7PZNC3SSje10
+IVi44A=184jg0;b6go01i80
+R1
+R0
+Z5 w1479692934
+Z6 8rocketPositionLogic.v
+Z7 FrocketPositionLogic.v
+L0 72
+R3
+r1
+!s85 0
+31
+Z8 !s108 1479769066.000000
+Z9 !s107 rocketPositionLogic.v|
+Z10 !s90 -reportprogress|300|-novopt|rocketPositionLogic.v|
+!i113 1
+vdatapath
+R4
+!i10b 1
+!s100 PVBadT9LzZ_A0XcQg02a41
+ICZeU;a:d[_k^BKD85E`di1
+R1
+R0
+R5
+R6
+R7
+L0 1025
+R3
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+vrocketPositionLogic
+R4
+!i10b 1
+!s100 D[1nOj?:3_JJA>@i;[]JC2
+Ii]81WUgiP@:DjbVcYBZ7:0
+R1
+R0
+R5
+R6
+R7
+L0 2
+R3
+r1
+!s85 0
+31
+R8
+R9
+R10
+!i113 1
+nrocket@position@logic
+vYes
+R4
+!i10b 1
+!s100 F2E^Zn[E:CEjSkB:AD4aB2
+IzCL7_=nMU=Je]:g8H?EMk2
+R1
+R0
+w1479685879
+8Yes.v
+FYes.v
+R2
+R3
+r1
+!s85 0
+31
+!s108 1479769067.000000
+!s107 Yes.v|
+!s90 -reportprogress|300|Yes.v|
+!i113 1
+n@yes

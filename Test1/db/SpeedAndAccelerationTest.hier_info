@@ -1,0 +1,104 @@
+|SpeedAndAccelerationTest
+CLOCK_50 => CLOCK_50.IN4
+KEY[0] => resetn.IN4
+KEY[1] => KEY[1].IN1
+KEY[2] => KEY[2].IN1
+KEY[3] => KEY[3].IN1
+moveUp <= changePosition:changeYPosition.movePositive
+moveDown <= changePosition:changeYPosition.moveNegative
+moveLeft <= changePosition:changeXPosition.moveNegative
+moveRight <= changePosition:changeXPosition.movePositive
+
+
+|SpeedAndAccelerationTest|speedX:xDirection
+clock => speedXOut[0]~reg0.CLK
+clock => speedXOut[1]~reg0.CLK
+clock => speedXOut[2]~reg0.CLK
+clock => accelerationCounter2[0].CLK
+clock => accelerationCounter2[1].CLK
+clock => accelerationCounter1[0].CLK
+clock => accelerationCounter1[1].CLK
+clock => accelerateRight.CLK
+clock => accelerateLeft.CLK
+resetn => accelerationCounter2[0].ACLR
+resetn => accelerationCounter2[1].ACLR
+resetn => accelerationCounter1[0].ACLR
+resetn => accelerationCounter1[1].ACLR
+resetn => accelerateRight.ACLR
+resetn => accelerateLeft.ACLR
+acceleration1 => always0.IN0
+acceleration1 => accelerateLeft.OUTPUTSELECT
+acceleration1 => accelerationCounter1.OUTPUTSELECT
+acceleration1 => accelerationCounter1.OUTPUTSELECT
+acceleration1 => accelerateRight.OUTPUTSELECT
+acceleration2 => always0.IN1
+acceleration2 => accelerateRight.OUTPUTSELECT
+acceleration2 => accelerateLeft.OUTPUTSELECT
+acceleration2 => accelerationCounter2[1].ENA
+acceleration2 => accelerationCounter2[0].ENA
+speedXOut[0] <= speedXOut[0]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+speedXOut[1] <= speedXOut[1]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+speedXOut[2] <= speedXOut[2]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+
+
+|SpeedAndAccelerationTest|speedY:yDirection
+clock => speedYOut[0]~reg0.CLK
+clock => speedYOut[1]~reg0.CLK
+clock => speedYOut[2]~reg0.CLK
+clock => accelerationCounterDown[0].CLK
+clock => accelerationCounterDown[1].CLK
+clock => accelerationCounterUp[0].CLK
+clock => accelerationCounterUp[1].CLK
+clock => accelerateUp.CLK
+clock => accelerateDown.CLK
+resetn => accelerationCounterDown[0].ACLR
+resetn => accelerationCounterDown[1].ACLR
+resetn => accelerationCounterUp[0].ACLR
+resetn => accelerationCounterUp[1].ACLR
+resetn => accelerateUp.ACLR
+resetn => accelerateDown.ACLR
+acceleration => accelerateDown.OUTPUTSELECT
+acceleration => accelerateUp.OUTPUTSELECT
+acceleration => accelerationCounterUp[1].ENA
+acceleration => accelerationCounterUp[0].ENA
+acceleration => accelerationCounterDown[1].ENA
+acceleration => accelerationCounterDown[0].ENA
+speedYOut[0] <= speedYOut[0]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+speedYOut[1] <= speedYOut[1]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+speedYOut[2] <= speedYOut[2]~reg0.DB_MAX_OUTPUT_PORT_TYPE
+
+
+|SpeedAndAccelerationTest|changePosition:changeXPosition
+clock => moveNegative~reg0.CLK
+clock => movePositive~reg0.CLK
+clock => speedCounter[0].CLK
+clock => speedCounter[1].CLK
+resetn => moveNegative~reg0.ACLR
+resetn => movePositive~reg0.ACLR
+resetn => speedCounter[0].ACLR
+resetn => speedCounter[1].ACLR
+speed[0] => LessThan0.IN2
+speed[1] => LessThan0.IN1
+speed[2] => moveNegative.OUTPUTSELECT
+speed[2] => movePositive.OUTPUTSELECT
+movePositive <= movePositive~reg0.DB_MAX_OUTPUT_PORT_TYPE
+moveNegative <= moveNegative~reg0.DB_MAX_OUTPUT_PORT_TYPE
+
+
+|SpeedAndAccelerationTest|changePosition:changeYPosition
+clock => moveNegative~reg0.CLK
+clock => movePositive~reg0.CLK
+clock => speedCounter[0].CLK
+clock => speedCounter[1].CLK
+resetn => moveNegative~reg0.ACLR
+resetn => movePositive~reg0.ACLR
+resetn => speedCounter[0].ACLR
+resetn => speedCounter[1].ACLR
+speed[0] => LessThan0.IN2
+speed[1] => LessThan0.IN1
+speed[2] => moveNegative.OUTPUTSELECT
+speed[2] => movePositive.OUTPUTSELECT
+movePositive <= movePositive~reg0.DB_MAX_OUTPUT_PORT_TYPE
+moveNegative <= moveNegative~reg0.DB_MAX_OUTPUT_PORT_TYPE
+
+

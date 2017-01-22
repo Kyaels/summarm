@@ -1,0 +1,56 @@
+vlib work
+
+vlog -novopt rocketPositionLogic.v
+vlog Yes.v
+
+vsim -L altera_mf_ver rocketPositionLogic
+
+add wave {/*}
+
+log {/*}
+# thingies that we need: clock, resetn, moveUp, moveDown, moveLeft, moveRight, address, outQ
+
+force {clock} 0 0ns, 1 {5ns} -r 10ns
+force {resetn} 1
+force {moveUp} 0
+force {moveDown} 0
+force {moveLeft} 0
+force {moveRight} 0
+force {check} 0
+run 10ns
+
+force {clock} 0 0ns, 1 {5ns} -r 10ns
+force {resetn} 0
+force {moveUp} 0
+force {moveDown} 1
+force {moveLeft} 0
+force {moveRight} 0
+force {check} 0
+run 10ns
+
+force {clock} 0 0ns, 1 {5ns} -r 10ns
+force {resetn} 0
+force {moveUp} 0
+force {moveDown} 0
+force {moveLeft} 0
+force {moveRight} 0
+force {check} 0
+run 300ns
+
+force {clock} 0 0ns, 1 {5ns} -r 10ns
+force {resetn} 0
+force {moveUp} 0
+force {moveDown} 0
+force {moveLeft} 0
+force {moveRight} 0
+force {check} 1
+run 10ns
+
+force {clock} 0 0ns, 1 {5ns} -r 10ns
+force {resetn} 0
+force {moveUp} 0
+force {moveDown} 0
+force {moveLeft} 0
+force {moveRight} 0
+force {check} 0
+run 200ns

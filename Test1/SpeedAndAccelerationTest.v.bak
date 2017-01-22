@@ -1,0 +1,5 @@
+module SpeedAndAccelerationTest (CLOCK_50, KEY, TestOutput)
+
+	input CLOCK_50;
+	input [3:0] KEY;
+	output TestOutput;

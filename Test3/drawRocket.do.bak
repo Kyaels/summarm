@@ -1,0 +1,12 @@
+vlib work
+
+vlog drawRocket.v
+
+vsim -L altera_mf_ver drawRocket
+
+add wave {/*}
+
+log {/*}
+
+force {clock} 0 0ns, 1 5ns, -r 10ns
+force {resetn} 1

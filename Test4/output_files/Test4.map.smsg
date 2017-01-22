@@ -1,0 +1,2 @@
+Info (10281): Verilog HDL Declaration information at Test4.v(24): object "y" differs only in case from object "Y" in the same scope File: W:/ECE241/FinalProject/Test4/Test4.v Line: 24
+Info (10281): Verilog HDL Declaration information at Test4.v(94): object "y" differs only in case from object "Y" in the same scope File: W:/ECE241/FinalProject/Test4/Test4.v Line: 94
